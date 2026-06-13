@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taxis — MaisonFacile</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">🏠 MaisonFacile</a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Accueil</a>
+      <a href="annonces.html" class="nav-link">Locations</a>
+      <a href="hotels.html" class="nav-link">Hôtels</a>
+      <a href="taxis.html" class="nav-link active">Taxis</a>
+      <a href="restaurants.html" class="nav-link">Restaurants</a>
+      <a href="publier.html" class="nav-btn">Publier</a>
+    </div>
+    <button class="burger" id="burger">☰</button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Accueil</a><a href="annonces.html">Locations</a>
+    <a href="hotels.html">Hôtels</a><a href="taxis.html">Taxis</a>
+    <a href="restaurants.html">Restaurants</a><a href="publier.html">Publier</a>
+  </div>
+</nav>
+
+<section class="hero" style="padding:2.5rem 1.5rem 2rem">
+  <div class="hero-content">
+    <div class="hero-badge">🚖 Congo · Gabon · Cameroun · Côte d'Ivoire</div>
+    <h1>Trouvez un taxi<br><span class="accent">de confiance</span></h1>
+    <p class="hero-sub">Chauffeurs vérifiés, notés par la communauté. Inscription gratuite pour les chauffeurs.</p>
+    <div class="search-bar">
+      <select id="fPays" class="search-select" onchange="filtrerTaxis()">
+        <option value="">Tous les pays</option>
+        <option value="Congo">🇨🇬 Congo</option>
+        <option value="Gabon">🇬🇦 Gabon</option>
+        <option value="Cameroun">🇨🇲 Cameroun</option>
+        <option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+      </select>
+      <input type="text" id="fVille" placeholder="Ville..." class="search-input" oninput="filtrerTaxis()">
+      <select id="fType" class="search-select" onchange="filtrerTaxis()">
+        <option value="">Tous types</option>
+        <option value="sedan">Berline</option>
+        <option value="4x4">4×4 / SUV</option>
+        <option value="minibus">Minibus</option>
+      </select>
+      <button class="search-btn" onclick="filtrerTaxis()">Rechercher</button>
+    </div>
+  </div>
+</section>
+
+<div class="annonces-page">
+  <aside class="filters-panel">
+    <h3>Filtres</h3>
+    <div class="filter-group">
+      <label>Score minimum</label>
+      <select id="fScore" onchange="filtrerTaxis()">
+        <option value="">Tous</option>
+        <option value="4">Excellent (≥ 4/5)</option>
+        <option value="3">Bien (≥ 3/5)</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Disponibilité</label>
+      <select id="fDispo" onchange="filtrerTaxis()">
+        <option value="">Tous</option>
+        <option value="1">Disponible maintenant</option>
+        <option value="0">Tous horaires</option>
+      </select>
+    </div>
+    <button class="reset-btn" onclick="resetFiltreTaxi()">Réinitialiser</button>
+    <div id="mapTaxis" class="map-sidebar"></div>
+  </aside>
+
+  <main class="annonces-main">
+    <div class="annonces-toolbar">
+      <span id="countTaxis">Chargement...</span>
+    </div>
+    <div class="cards-grid" id="taxisGrid"></div>
+  </main>
+</div>
+
+<!-- INSCRIPTION CHAUFFEUR -->
+<div style="text-align:center;padding:2rem;background:var(--white);border-top:1px solid var(--border)">
+  <h3 style="margin-bottom:.5rem">Vous êtes chauffeur ?</h3>
+  <p style="font-size:14px;color:var(--text-muted);margin-bottom:1rem">Inscription <strong>100% gratuite</strong>. Soyez noté par vos clients.</p>
+  <button class="nav-btn" style="font-size:14px" onclick="ouvrirInscriptionTaxi()">+ M'inscrire comme chauffeur (Gratuit)</button>
+</div>
+
+<!-- MODALE INSCRIPTION TAXI -->
+<div id="modalTaxiInsc" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('modalTaxiInsc').style.display='none'">✕</button>
+    <div class="modal-body">
+      <h2>Inscription chauffeur</h2>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem">
+        Gratuit. Votre profil sera visible après vérification.
+        <br>⚠️ Après <strong style="font-weight:500">20 avis négatifs consécutifs</strong>, votre compte sera suspendu automatiquement.
+      </p>
+      <div class="form-group"><label>Prénom et Nom *</label><input type="text" id="txNom"></div>
+      <div class="form-group"><label>Pays *</label>
+        <select id="txPays" onchange="updateVillesTaxi()">
+          <option value="">Choisir</option>
+          <option value="Congo">🇨🇬 Congo</option><option value="Gabon">🇬🇦 Gabon</option>
+          <option value="Cameroun">🇨🇲 Cameroun</option><option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Ville *</label><select id="txVille"><option>Choisir d'abord le pays</option></select></div>
+      <div class="form-group"><label>Téléphone *</label><input type="tel" id="txTel" placeholder="+242 06 XXX XX XX"></div>
+      <div class="form-group"><label>Type de véhicule</label>
+        <select id="txType">
+          <option value="sedan">Berline (Sedan)</option>
+          <option value="4x4">4×4 / SUV</option>
+          <option value="minibus">Minibus (7-9 places)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Marque et modèle du véhicule</label><input type="text" id="txVehicule" placeholder="ex: Toyota Corolla"></div>
+      <div class="form-group"><label>Zone de couverture</label><input type="text" id="txZone" placeholder="ex: Brazzaville centre, aéroport..."></div>
+      <button class="pay-btn" style="width:100%" onclick="inscrireTaxi()">S'inscrire gratuitement</button>
+    </div>
+  </div>
+</div>
+
+<footer class="footer"><div class="container footer-inner">
+  <span class="logo">🏠 MaisonFacile</span>
+  <span class="footer-copy">© 2025</span>
+</div></footer>
+
+<script src="data.js"></script>
+<script src="scoring.js"></script>
+<script src="taxis.js"></script>
+</body>
+</html>
+EOF
+
+cat > /home/claude/maison-facile/taxis.js << 'EOF'
+// =============================================
+// TAXIS.JS
+// Inscription gratuite. Retrait à 20 avis négatifs.
+// =============================================
+
+const TAXIS_DEMO = [
+  { id:'t1', nom:'Parfait Mabiala', pays:'Congo', ville:'Brazzaville', type:'sedan',
+    vehicule:'Toyota Corolla', zone:'Brazzaville centre, Aéroport Maya-Maya',
+    telephone:'+242 06 100 200 3', lat:-4.264, lng:15.281, statut:'actif', scoresMoyen:4.6, nbAvis:52, dispo:true },
+  { id:'t2', nom:'Alexis Nguema', pays:'Gabon', ville:'Libreville', type:'4x4',
+    vehicule:'Toyota Land Cruiser', zone:'Grand Libreville, Owendo',
+    telephone:'+241 07 200 300 4', lat:0.393, lng:9.452, statut:'actif', scoresMoyen:4.1, nbAvis:31, dispo:true },
+  { id:'t3', nom:'Charles Mbida', pays:'Cameroun', ville:'Douala', type:'minibus',
+    vehicule:'Mercedes Sprinter 9 places', zone:'Douala toutes zones, Bafoussam',
+    telephone:'+237 677 300 400', lat:4.053, lng:9.711, statut:'actif', scoresMoyen:3.6, nbAvis:24, dispo:false },
+  { id:'t4', nom:'Kofi Asante', pays:"Côte d'Ivoire", ville:'Abidjan', type:'sedan',
+    vehicule:'Hyundai Accent', zone:'Cocody, Plateau, Marcory',
+    telephone:'+225 07 400 500 6', lat:5.359, lng:-4.002, statut:'actif', scoresMoyen:4.3, nbAvis:67, dispo:true },
+  { id:'t5', nom:'Justin Loemba', pays:'Congo', ville:'Pointe-Noire', type:'sedan',
+    vehicule:'Renault Logan', zone:'Pointe-Noire toutes zones',
+    telephone:'+242 05 500 600 7', lat:-4.776, lng:11.864, statut:'actif', scoresMoyen:2.1, nbAvis:22, dispo:true }
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupBurger();
+  filtrerTaxis();
+  initMapTaxis();
+});
+
+function filtrerTaxis() {
+  let liste = TAXIS_DEMO.filter(t => t.statut === 'actif');
+  const pays = document.getElementById('fPays')?.value;
+  const ville = document.getElementById('fVille')?.value.toLowerCase();
+  const type = document.getElementById('fType')?.value;
+  const scoreMin = parseFloat(document.getElementById('fScore')?.value) || 0;
+  const dispo = document.getElementById('fDispo')?.value;
+
+  if (pays) liste = liste.filter(t => t.pays === pays);
+  if (ville) liste = liste.filter(t => t.ville.toLowerCase().includes(ville));
+  if (type) liste = liste.filter(t => t.type === type);
+  if (scoreMin) liste = liste.filter(t => (t.scoresMoyen||0) >= scoreMin);
+  if (dispo === '1') liste = liste.filter(t => t.dispo);
+
+  liste.sort((a,b) => (b.scoresMoyen||0)-(a.scoresMoyen||0));
+
+  const ct = document.getElementById('countTaxis');
+  if (ct) ct.textContent = `${liste.length} chauffeur${liste.length>1?'s':''} trouvé${liste.length>1?'s':''}`;
+  renderTaxis(liste);
+}
+
+function resetFiltreTaxi() {
+  ['fPays','fVille','fType','fScore','fDispo'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  filtrerTaxis();
+}
+
+function renderTaxis(liste) {
+  const grid = document.getElementById('taxisGrid');
+  if (!grid) return;
+  const typeIcons = { sedan:'🚗', '4x4':'🚙', minibus:'🚐' };
+  grid.innerHTML = liste.map(t => {
+    const sc = t.scoresMoyen || 0;
+    const couleur = sc>=4?'#16a34a':sc>=2.5?'#ca8a04':'#dc2626';
+    const etiquette = sc>=4?'Excellent':sc>=2.5?'Correct':'Mauvais';
+    return `<div class="annonce-card">
+      <div class="card-img ${sc>=4?'2p':sc>=2.5?'studio':'villa'}" style="align-items:center;justify-content:center">
+        <span class="card-pays-badge" style="position:absolute;top:10px;left:10px">${drapeauPays(t.pays)} ${t.pays}</span>
+        <span style="font-size:3.5rem">${typeIcons[t.type]||'🚗'}</span>
+        <span style="position:absolute;bottom:8px;right:8px;background:${couleur};color:#fff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:500">
+          ★ ${sc?sc.toFixed(1):'Nouveau'} — ${etiquette}
+        </span>
+        ${t.dispo?'<span style="position:absolute;top:10px;right:10px;background:#16a34a;color:#fff;border-radius:6px;padding:2px 7px;font-size:11px">Disponible</span>':''}
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">${t.nom}</h3>
+        <p class="card-loc">📍 ${t.ville} · ${t.vehicule}</p>
+        <p class="card-desc" style="font-size:12px">🗺️ ${t.zone}</p>
+        <div class="card-footer" style="margin-top:8px">
+          <button class="card-contact" onclick="ouvrirNotation('${t.id}','taxi','${t.nom}')">⭐ Noter</button>
+          <button class="card-contact" onclick="contacterTaxi('${t.telephone}','${t.nom}')">📞 Contacter</button>
+          <button class="card-contact" style="font-size:11px" onclick="ouvrirSignalement('${t.id}','taxi')">🚩</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function contacterTaxi(tel, nom) {
+  alert(`📞 Contacter ${nom}\nTéléphone : ${tel}`);
+}
+
+function initMapTaxis() {
+  const el = document.getElementById('mapTaxis'); if (!el) return;
+  const map = L.map('mapTaxis').setView([0,10],3);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+  TAXIS_DEMO.filter(t=>t.lat&&t.lng&&t.statut==='actif').forEach(t => {
+    const sc = t.scoresMoyen||0;
+    const c = sc>=4?'#16a34a':sc>=2.5?'#ca8a04':'#dc2626';
+    const icon = L.divIcon({className:'',html:`<div class="map-marker" style="background:${c}">🚗</div>`,iconAnchor:[24,12]});
+    L.marker([t.lat,t.lng],{icon}).addTo(map).bindPopup(`<strong>${t.nom}</strong><br>${t.vehicule}`);
+  });
+}
+
+function ouvrirInscriptionTaxi() { document.getElementById('modalTaxiInsc').style.display='flex'; }
+function updateVillesTaxi() {
+  const pays = document.getElementById('txPays').value;
+  const sel = document.getElementById('txVille');
+  sel.innerHTML = pays ? VILLES[pays].map(v=>`<option value="${v}">${v}</option>`).join('') : '<option>Choisir d\'abord le pays</option>';
+}
+
+function inscrireTaxi() {
+  const nom = document.getElementById('txNom').value;
+  const tel = document.getElementById('txTel').value;
+  const pays = document.getElementById('txPays').value;
+  if (!nom||!tel||!pays) { alert('Remplissez tous les champs obligatoires.'); return; }
+  document.getElementById('modalTaxiInsc').style.display='none';
+  const c=document.createElement('div'); c.className='modal-overlay';
+  c.innerHTML=`<div class="modal-box" style="text-align:center;padding:2rem">
+    <div style="font-size:3rem;margin-bottom:1rem">🚖</div>
+    <h2>Inscription enregistrée !</h2>
+    <p style="font-size:13px;color:var(--color-text-secondary);margin-top:.75rem">
+      Bienvenue <strong style="font-weight:500">${nom}</strong> !<br>
+      Votre profil sera visible après vérification (24h max).<br><br>
+      ⚠️ Rappel : 20 avis négatifs consécutifs = suspension automatique.
+    </p>
+    <button class="next-btn" style="margin-top:1.5rem" onclick="this.closest('.modal-overlay').remove()">Fermer</button>
+  </div>`;
+  document.body.appendChild(c);
+}
+
+function setupBurger() {
+  const btn=document.getElementById('burger'),menu=document.getElementById('mobileMenu');
+  if(btn&&menu) btn.addEventListener('click',()=>menu.classList.toggle('open'));
+}
+EOF
+echo "taxis OK"
+Sortie
+
+taxis OK
+
+Create restaurants page

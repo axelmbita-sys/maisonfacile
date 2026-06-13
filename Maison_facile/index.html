@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaisonFacile — Louer en Afrique Centrale</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">🏠 MaisonFacile</a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Accueil</a>
+      <a href="annonces.html" class="nav-link">Maisons</a>
+      <a href="hotels.html" class="nav-link">Hôtels</a>
+      <a href="taxis.html" class="nav-link">Taxis</a>
+      <a href="restaurants.html" class="nav-link">Restaurants</a>
+      <a href="publier.html" class="nav-btn">Publier</a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">☰</button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Accueil</a>
+    <a href="annonces.html">Maisons</a>
+    <a href="hotels.html">Hôtels</a>
+    <a href="taxis.html">Taxis</a>
+    <a href="restaurants.html">Restaurants</a>
+    <a href="publier.html">Publier une annonce</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">🌍 Congo · Gabon · Cameroun · Côte d'Ivoire</div>
+    <h1>Tout ce qu'il vous faut<br><span class="accent">en un seul endroit</span></h1>
+    <p class="hero-sub">Maisons, hôtels, taxis, restaurants — géolocalisés, notés, vérifiés.</p>
+    <div class="search-bar">
+      <select id="paysFilter" class="search-select">
+        <option value="">Tous les pays</option>
+        <option value="Congo">🇨🇬 Congo</option>
+        <option value="Gabon">🇬🇦 Gabon</option>
+        <option value="Cameroun">🇨🇲 Cameroun</option>
+        <option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="Quartier, ville..." class="search-input">
+      <select id="serviceFilter" class="search-select">
+        <option value="">Tous les services</option>
+        <option value="maisons">Maisons</option>
+        <option value="hotels">Hôtels</option>
+        <option value="taxis">Taxis</option>
+        <option value="restaurants">Restaurants</option>
+      </select>
+      <button class="search-btn" onclick="rechercherService()">Rechercher</button>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><span class="stat-n" id="statAnnonces">0</span><span class="stat-l">Maisons</span></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><span class="stat-n" id="statHotels">0</span><span class="stat-l">Hôtels</span></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><span class="stat-n" id="statTaxis">0</span><span class="stat-l">Taxis</span></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><span class="stat-n" id="statRestau">0</span><span class="stat-l">Restaurants</span></div>
+  </div>
+</section>
+
+<!-- SERVICES GRID -->
+<section class="services-section">
+  <div class="container">
+    <h2 class="centered">Nos services</h2>
+    <div class="services-grid">
+      <a href="annonces.html" class="service-card">
+        <div class="service-ico" style="background:#E8F5EE">🏠</div>
+        <h3>Maisons à louer</h3>
+        <p>Trouvez un logement vérifié sans intermédiaire. Annonces géolocalisées et logeurs certifiés.</p>
+        <span class="service-cta">Voir les maisons →</span>
+      </a>
+      <a href="hotels.html" class="service-card">
+        <div class="service-ico" style="background:#EFF6FF">🏨</div>
+        <h3>Réservation d'hôtels</h3>
+        <p>Chambres d'hôtel disponibles dans les 4 pays. Réservez et payez en Mobile Money.</p>
+        <span class="service-cta">Voir les hôtels →</span>
+      </a>
+      <a href="taxis.html" class="service-card">
+        <div class="service-ico" style="background:#FEF3C7">🚕</div>
+        <h3>Taxis disponibles</h3>
+        <p>Chauffeurs notés par les usagers. Les mieux notés en vert, les mauvais exclus automatiquement.</p>
+        <span class="service-cta">Trouver un taxi →</span>
+      </a>
+      <a href="restaurants.html" class="service-card">
+        <div class="service-ico" style="background:#FDF0E8">🍽️</div>
+        <h3>Restaurants à proximité</h3>
+        <p>Découvrez les meilleurs restaurants notés par la communauté. Marqueurs verts = top qualité.</p>
+        <span class="service-cta">Voir les restaurants →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CARTE -->
+<section class="map-section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Tout sur la carte</h2>
+      <a href="annonces.html" class="see-all">Voir les maisons →</a>
+    </div>
+    <div id="map" class="map-box"></div>
+  </div>
+</section>
+
+<!-- DERNIÈRES ANNONCES -->
+<section class="annonces-section">
+  <div class="container">
+    <div class="section-head"><h2>Dernières maisons disponibles</h2><a href="annonces.html" class="see-all">Voir tout →</a></div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+</section>
+
+<!-- CTA LOGEUR -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box">
+      <div class="cta-text">
+        <h2>Vous proposez un service ?</h2>
+        <p>Maison à louer, hôtel, taxi ou restaurant — rejoignez MaisonFacile. <strong>2 500 F</strong> seulement pour les logeurs.</p>
+      </div>
+      <a href="publier.html" class="cta-btn">Publier mon annonce</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <span class="logo">🏠 MaisonFacile</span>
+    <span class="footer-copy">© 2025 — Congo · Gabon · Cameroun · Côte d'Ivoire</span>
+    <div class="footer-links"><a href="#">Contact</a><a href="#">Conditions</a></div>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="scoring.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hôtels — MaisonFacile</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">🏠 MaisonFacile</a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Accueil</a>
+      <a href="annonces.html" class="nav-link">Locations</a>
+      <a href="hotels.html" class="nav-link active">Hôtels</a>
+      <a href="taxis.html" class="nav-link">Taxis</a>
+      <a href="restaurants.html" class="nav-link">Restaurants</a>
+      <a href="publier.html" class="nav-btn">Publier</a>
+    </div>
+    <button class="burger" id="burger">☰</button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Accueil</a><a href="annonces.html">Locations</a>
+    <a href="hotels.html">Hôtels</a><a href="taxis.html">Taxis</a>
+    <a href="restaurants.html">Restaurants</a><a href="publier.html">Publier</a>
+  </div>
+</nav>
+
+<section class="hero" style="padding:2.5rem 1.5rem 2rem">
+  <div class="hero-content">
+    <div class="hero-badge">🏨 Congo · Gabon · Cameroun · Côte d'Ivoire</div>
+    <h1>Réservez une chambre<br><span class="accent">d'hôtel en sécurité</span></h1>
+    <p class="hero-sub">Hôtels vérifiés, paiement Mobile Money, confirmation immédiate.</p>
+    <div class="search-bar">
+      <select id="fPays" class="search-select" onchange="filtrerHotels()">
+        <option value="">Tous les pays</option>
+        <option value="Congo">🇨🇬 Congo</option>
+        <option value="Gabon">🇬🇦 Gabon</option>
+        <option value="Cameroun">🇨🇲 Cameroun</option>
+        <option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+      </select>
+      <input type="text" id="fVille" placeholder="Ville ou quartier..." class="search-input" oninput="filtrerHotels()">
+      <select id="fEtoiles" class="search-select" onchange="filtrerHotels()">
+        <option value="">Toutes catégories</option>
+        <option value="1">★ Économique</option>
+        <option value="2">★★ Standard</option>
+        <option value="3">★★★ Confort</option>
+        <option value="4">★★★★ Supérieur</option>
+        <option value="5">★★★★★ Luxe</option>
+      </select>
+      <button class="search-btn" onclick="filtrerHotels()">Rechercher</button>
+    </div>
+  </div>
+</section>
+
+<div class="annonces-page">
+  <aside class="filters-panel">
+    <h3>Filtres</h3>
+    <div class="filter-group">
+      <label>Prix max / nuit (F CFA)</label>
+      <input type="number" id="fPrixMax" placeholder="ex: 50000" oninput="filtrerHotels()">
+    </div>
+    <div class="filter-group">
+      <label>Score minimum</label>
+      <select id="fScore" onchange="filtrerHotels()">
+        <option value="">Tous</option>
+        <option value="4">Excellent (★★★★+)</option>
+        <option value="3">Bien (★★★+)</option>
+      </select>
+    </div>
+    <button class="reset-btn" onclick="resetFiltres()">Réinitialiser</button>
+    <div id="mapHotels" class="map-sidebar"></div>
+  </aside>
+
+  <main class="annonces-main">
+    <div class="annonces-toolbar">
+      <span id="countHotels">Chargement...</span>
+      <select id="sortHotels" onchange="filtrerHotels()">
+        <option value="score">Meilleur score</option>
+        <option value="prix_asc">Prix croissant</option>
+        <option value="prix_desc">Prix décroissant</option>
+      </select>
+    </div>
+    <div class="cards-grid" id="hotelsGrid"></div>
+  </main>
+</div>
+
+<!-- MODALE RÉSERVATION -->
+<div id="modalReservation" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('modalReservation').style.display='none'">✕</button>
+    <div class="modal-body">
+      <h2 id="resaHotelNom">Réserver</h2>
+      <div class="recap-box" id="resaRecap"></div>
+      <div class="form-group" style="margin-top:1rem">
+        <label>Date d'arrivée</label>
+        <input type="date" id="resaArrivee" onchange="calculerTotal()">
+      </div>
+      <div class="form-group">
+        <label>Date de départ</label>
+        <input type="date" id="resaDepart" onchange="calculerTotal()">
+      </div>
+      <div class="form-group">
+        <label>Type de chambre</label>
+        <select id="resaChambre" onchange="calculerTotal()"></select>
+      </div>
+      <div id="resaTotal" class="tarif-box" style="display:none"></div>
+      <div class="form-group">
+        <label>Votre nom complet</label>
+        <input type="text" id="resaNom" placeholder="Jean-Pierre Moukala">
+      </div>
+      <div class="form-group">
+        <label>Votre téléphone Mobile Money</label>
+        <input type="tel" id="resaTel" placeholder="+242 06 XXX XX XX">
+      </div>
+      <div class="operateur-grid" id="resaOperateurs" style="margin-bottom:1rem"></div>
+      <button class="pay-btn" style="width:100%" onclick="confirmerReservationHotel()">
+        💳 Payer et confirmer
+      </button>
+      <p style="font-size:12px;color:var(--color-text-secondary);margin-top:.5rem;text-align:center">
+        La chambre sera libérée de la disponibilité après confirmation du paiement.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE INSCRIPTION HÔTEL -->
+<div id="modalInscription" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('modalInscription').style.display='none'">✕</button>
+    <div class="modal-body">
+      <h2>Inscrire votre hôtel</h2>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem">
+        Abonnement <strong style="font-weight:500">10 000 F CFA/mois</strong> + commission de <strong style="font-weight:500">9,99%</strong> sur chaque réservation.
+      </p>
+      <div class="form-group"><label>Nom de l'hôtel *</label><input type="text" id="inscNom"></div>
+      <div class="form-group"><label>Pays *</label>
+        <select id="inscPays" onchange="updateVillesHotel()">
+          <option value="">Choisir</option>
+          <option value="Congo">🇨🇬 Congo</option>
+          <option value="Gabon">🇬🇦 Gabon</option>
+          <option value="Cameroun">🇨🇲 Cameroun</option>
+          <option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Ville *</label><select id="inscVille"><option value="">Choisir d'abord le pays</option></select></div>
+      <div class="form-group"><label>Quartier / Adresse</label><input type="text" id="inscAdresse"></div>
+      <div class="form-group"><label>Catégorie</label>
+        <select id="inscEtoiles">
+          <option value="1">★ Économique</option>
+          <option value="2">★★ Standard</option>
+          <option value="3" selected>★★★ Confort</option>
+          <option value="4">★★★★ Supérieur</option>
+          <option value="5">★★★★★ Luxe</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Téléphone de contact *</label><input type="tel" id="inscTel" placeholder="+242 06 XXX XX XX"></div>
+      <div class="form-group"><label>Description</label><textarea id="inscDesc" rows="3" placeholder="Services proposés, équipements..."></textarea></div>
+      <div class="tarif-box">
+        <div class="tarif-label">Abonnement mensuel</div>
+        <div class="tarif-amount">10 000 F CFA</div>
+        <div class="tarif-note">+ 9,99% de commission par réservation</div>
+      </div>
+      <div class="operateur-grid" id="inscOperateurs" style="margin:.75rem 0"></div>
+      <div class="form-group"><label>Numéro Mobile Money *</label><input type="tel" id="inscMM" placeholder="+242 06 XXX XX XX"></div>
+      <button class="pay-btn" style="width:100%" onclick="inscrireHotel()">💳 Payer et s'inscrire</button>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:2rem">
+  <button class="nav-btn" style="font-size:14px" onclick="document.getElementById('modalInscription').style.display='flex'">
+    + Inscrire mon hôtel (10 000 F/mois)
+  </button>
+</div>
+
+<footer class="footer"><div class="container footer-inner">
+  <span class="logo">🏠 MaisonFacile</span>
+  <span class="footer-copy">© 2025 — Congo · Gabon · Cameroun · Côte d'Ivoire</span>
+</div></footer>
+
+<script src="data.js"></script>
+<script src="scoring.js"></script>
+<script src="hotels.js"></script>
+</body>
+</html>
+EOF
+echo "hotels.html OK"
+Sortie
+
+hotels.html OK
