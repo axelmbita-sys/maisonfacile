@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Publier une annonce — MaisonFacile</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">🏠 MaisonFacile</a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Accueil</a>
+      <a href="annonces.html" class="nav-link">Annonces</a>
+      <a href="publier.html" class="nav-btn active">Publier</a>
+    </div>
+  </div>
+</nav>
+
+<div class="publier-page">
+  <div class="publier-container">
+
+    <!-- ÉTAPES -->
+    <div class="steps-indicator">
+      <div class="step-dot active" id="dot1">1</div>
+      <div class="step-line" id="line1"></div>
+      <div class="step-dot" id="dot2">2</div>
+      <div class="step-line" id="line2"></div>
+      <div class="step-dot" id="dot3">3</div>
+    </div>
+    <div class="steps-labels">
+      <span class="active">Logement</span>
+      <span>Localisation</span>
+      <span>Paiement</span>
+    </div>
+
+    <!-- ÉTAPE 1 : INFOS LOGEMENT -->
+    <div class="form-step active" id="step1">
+      <h2>Décrivez votre logement</h2>
+      <p class="step-sub">L'IA va analyser votre description et fixer automatiquement le tarif de publication.</p>
+
+      <div class="form-group">
+        <label>Pays *</label>
+        <select id="pays" required onchange="updateVilles()">
+          <option value="">Choisir le pays</option>
+          <option value="Congo">🇨🇬 Congo</option>
+          <option value="Gabon">🇬🇦 Gabon</option>
+          <option value="Cameroun">🇨🇲 Cameroun</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Ville *</label>
+        <select id="ville" required>
+          <option value="">Choisir d'abord le pays</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Quartier</label>
+        <input type="text" id="quartier" placeholder="ex: Moungali, Bacongo...">
+      </div>
+
+      <div class="form-group">
+        <label>Type de logement *</label>
+        <div class="type-grid" id="typeGrid">
+          <div class="type-card" onclick="selectType('studio', this)">
+            <span class="type-ico">🛏️</span>
+            <span class="type-name">Studio</span>
+            <span class="type-price">2 500 F/mois</span>
+          </div>
+          <div class="type-card" onclick="selectType('2p', this)">
+            <span class="type-ico">🏠</span>
+            <span class="type-name">2 Chambres salon</span>
+            <span class="type-price">2 500 F/mois</span>
+          </div>
+          <div class="type-card" onclick="selectType('villa', this)">
+            <span class="type-ico">🏡</span>
+            <span class="type-name">Villa / Appartement</span>
+            <span class="type-price">5 000 F/mois</span>
+          </div>
+        </div>
+        <input type="hidden" id="typeLogement">
+      </div>
+
+      <div class="form-group">
+        <label>Loyer mensuel demandé (F CFA) *</label>
+        <input type="number" id="loyer" placeholder="ex: 80000" required min="0">
+      </div>
+
+      <div class="form-group">
+        <label>Description du logement *</label>
+        <textarea id="description" rows="4" placeholder="Décrivez votre maison : nombre de pièces, équipements, eau, électricité, gardien, parking..."></textarea>
+        <button class="ai-btn" onclick="genererDescriptionIA()" id="aiBtn">
+          ✨ Améliorer avec l'IA
+        </button>
+      </div>
+
+      <div id="iaResult" class="ia-result" style="display:none;">
+        <div class="ia-header">
+          <span>✨ Description générée par l'IA</span>
+          <button onclick="accepterIA()" class="accept-btn">Accepter</button>
+          <button onclick="rejeterIA()" class="reject-btn">Modifier</button>
+        </div>
+        <p id="iaText"></p>
+      </div>
+
+      <div id="tariфInfo" class="tarif-box" style="display:none;">
+        <div class="tarif-label">Tarif de publication</div>
+        <div class="tarif-amount" id="tarifAmount">0 F</div>
+        <div class="tarif-note" id="tarifNote"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Téléphone de contact *</label>
+        <input type="tel" id="telephone" placeholder="+242 06 XXX XX XX" required>
+      </div>
+
+      <div class="form-group">
+        <label>Nom du logeur *</label>
+        <input type="text" id="nomLogeur" placeholder="Votre nom complet" required>
+      </div>
+
+      <button class="next-btn" onclick="goStep(2)">Continuer → Localisation</button>
+    </div>
+
+    <!-- ÉTAPE 2 : LOCALISATION -->
+    <div class="form-step" id="step2">
+      <h2>Localisez votre bien sur la carte</h2>
+      <p class="step-sub">Cliquez sur la carte pour placer l'épingle exactement sur votre parcelle.</p>
+
+      <div id="mapPublier" class="map-publier"></div>
+      <div id="coordsDisplay" class="coords-display">
+        📍 Cliquez sur la carte pour sélectionner la position
+      </div>
+      <input type="hidden" id="lat">
+      <input type="hidden" id="lng">
+
+      <div class="form-group" style="margin-top:1rem;">
+        <label>Ou entrez l'adresse exacte (optionnel)</label>
+        <input type="text" id="adresse" placeholder="ex: Rue Marien Ngouabi, Moungali">
+      </div>
+
+      <div class="nav-btns">
+        <button class="back-btn" onclick="goStep(1)">← Retour</button>
+        <button class="next-btn" onclick="goStep(3)">Continuer → Paiement</button>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 3 : PAIEMENT MOBILE MONEY -->
+    <div class="form-step" id="step3">
+      <h2>Paiement de publication</h2>
+      <p class="step-sub">Payez via Mobile Money pour activer votre annonce. Elle sera visible immédiatement après confirmation.</p>
+
+      <div class="recap-box">
+        <div class="recap-title">Récapitulatif</div>
+        <div class="recap-row"><span>Type</span><strong id="recapType">—</strong></div>
+        <div class="recap-row"><span>Ville</span><strong id="recapVille">—</strong></div>
+        <div class="recap-row"><span>Loyer</span><strong id="recapLoyer">—</strong></div>
+        <div class="recap-row total"><span>À payer (publication)</span><strong id="recapTarif">—</strong></div>
+      </div>
+
+      <div class="form-group">
+        <label>Choisissez votre opérateur Mobile Money</label>
+        <div class="operateur-grid">
+          <div class="operateur-card" onclick="selectOperateur('mtn', this)">
+            <span class="op-color mtn">MTN</span>
+            <span class="op-name">Mobile Money</span>
+          </div>
+          <div class="operateur-card" onclick="selectOperateur('airtel', this)">
+            <span class="op-color airtel">Airtel</span>
+            <span class="op-name">Money</span>
+          </div>
+          <div class="operateur-card" onclick="selectOperateur('orange', this)">
+            <span class="op-color orange">Orange</span>
+            <span class="op-name">Money</span>
+          </div>
+          <div class="operateur-card" onclick="selectOperateur('wave', this)">
+            <span class="op-color wave">Wave</span>
+            <span class="op-name">Paiement</span>
+          </div>
+        </div>
+        <input type="hidden" id="operateur">
+      </div>
+
+      <div class="form-group">
+        <label>Numéro Mobile Money *</label>
+        <input type="tel" id="numMobileMoney" placeholder="+242 06 XXX XX XX" required>
+      </div>
+
+      <div id="paymentInstructions" class="payment-instructions" style="display:none;">
+        <div class="instruction-icon">📱</div>
+        <div id="instructionText"></div>
+      </div>
+
+      <div id="paymentStatus" class="payment-status" style="display:none;"></div>
+
+      <div class="nav-btns">
+        <button class="back-btn" onclick="goStep(2)">← Retour</button>
+        <button class="pay-btn" id="payBtn" onclick="lancerPaiement()">
+          💳 Payer et publier l'annonce
+        </button>
+      </div>
+    </div>
+
+    <!-- SUCCÈS -->
+    <div class="form-step" id="stepSuccess">
+      <div class="success-box">
+        <div class="success-icon">🎉</div>
+        <h2>Annonce publiée avec succès !</h2>
+        <p>Votre logement est maintenant visible sur la carte et dans la liste des annonces.</p>
+        <p>Vous recevrez un SMS de confirmation sur votre numéro Mobile Money.</p>
+        <div class="success-actions">
+          <a href="annonces.html" class="next-btn">Voir les annonces</a>
+          <a href="index.html" class="back-btn">Retour à l'accueil</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <span class="logo">🏠 MaisonFacile</span>
+    <span class="footer-copy">© 2025 — Congo · Gabon · Cameroun</span>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
